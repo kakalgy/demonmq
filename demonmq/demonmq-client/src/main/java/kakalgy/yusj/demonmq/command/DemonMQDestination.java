@@ -1,6 +1,7 @@
 package kakalgy.yusj.demonmq.command;
 
 import java.io.Externalizable;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,12 +62,64 @@ public abstract class DemonMQDestination extends JNDIBaseStorable
         // TODO Auto-generated constructor stub
     }
 
+    /**
+     * @openwire:property version=1
+     * @param physicalName
+     */
     public void setPhysicalName(String physicalName) {
         physicalName = physicalName.trim();
         final int length = physicalName.length();
 
         if (physicalName.isEmpty()) {
             throw new IllegalArgumentException("Invalid destination name: a non-empty name is required");
+        }
+        // options offset
+        int p = -1;
+        boolean composite = false;
+        for (int i = 0; i < length; i++) {
+            char c = physicalName.charAt(i);
+            if (c == '?') {
+                p = i;
+                break;
+            }
+            if (c == COMPOSITE_SEPERATOR) {
+                // won't be wild card
+                isPattern = false;
+                composite = true;
+            } else if (!composite && (c == '*' || c == '>')) {
+                isPattern = true;
+            }
+        }
+        // Strip off any options
+        if (p >= 0) {
+            String optstring = physicalName.substring(p + 1);
+            physicalName = physicalName.substring(0, p);
+            try {
+                options = URISupport.parseQuery(optstring);
+            } catch (URISyntaxException e) {
+                throw new IllegalArgumentException(
+                        "Invalid destination name: " + physicalName + ", it's options are not encoded properly: " + e);
+            }
+        }
+        this.physicalName = physicalName;
+        this.destinationPaths = null;
+        this.hashValue = 0;
+        if (composite) {
+            // Check to see if it is a composite.
+            Set<String> l = new HashSet<String>();
+            StringTokenizer iter = new StringTokenizer(physicalName, "" + COMPOSITE_SEPERATOR);
+            while (iter.hasMoreTokens()) {
+                String name = iter.nextToken().trim();
+                if (name.length() == 0) {
+                    continue;
+                }
+                l.add(name);
+            }
+            compositeDestinations = new ActiveMQDestination[l.size()];
+            int counter = 0;
+            for (String dest : l) {
+                compositeDestinations[counter++] = createDestination(dest);
+            }
         }
     }
 
