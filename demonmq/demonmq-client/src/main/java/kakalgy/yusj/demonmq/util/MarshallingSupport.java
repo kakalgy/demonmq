@@ -110,6 +110,13 @@ public final class MarshallingSupport {
         return answer;
     }
 
+    /**
+     * 向DataOutputStream写入value的值，会先根据value的类型写入类型的标志位，一个byte，再写入对应value的值，这样后面可以根据前一个byte表示的标志位得到value的类型
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalPrimitive(DataOutputStream out, Object value) throws IOException {
         if (value == null) {
             marshalNull(out);
