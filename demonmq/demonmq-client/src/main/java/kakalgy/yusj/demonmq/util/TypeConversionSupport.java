@@ -9,6 +9,8 @@ import java.util.Map;
 
 import org.fusesource.hawtbuf.UTF8Buffer;
 
+import kakalgy.yusj.demonmq.command.DemonMQDestination;
+
 /**
  * Type conversion support for ActiveMQ.
  * <p>
@@ -141,10 +143,10 @@ public class TypeConversionSupport {
                 return new Double(((Number) value).doubleValue());
             }
         });
-        CONVERSION_MAP.put(new ConversionKey(String.class, ActiveMQDestination.class), new Converter() {
+        CONVERSION_MAP.put(new ConversionKey(String.class, DemonMQDestination.class), new Converter() {
 
             public Object convert(Object value) {
-                return ActiveMQDestination.createDestination((String) value, ActiveMQDestination.QUEUE_TYPE);
+                return DemonMQDestination.createDestination((String) value, DemonMQDestination.QUEUE_TYPE);
             }
         });
         CONVERSION_MAP.put(new ConversionKey(String.class, URI.class), new Converter() {
@@ -176,10 +178,11 @@ public class TypeConversionSupport {
      * 
      * 
      * <ul>
-     * <li> ^ 异或运算符 1001 ^ 1100 = 0101</li>
-     * <li> << 左移运算符，将运算符左边的对象向左移动运算符右边指定的位数（在低位补0）</li>
-     * <li> >> "有符号"右移运算 符，将运算符左边的对象向右移动运算符右边指定的位数。使用符号扩展机制，也就是说，如果值为正，则在高位补0，如果值为负，则在高位补1.</li>
-     * <li> >>> "无符号"右移运算 符，将运算符左边的对象向右移动运算符右边指定的位数。采用0扩展机制，也就是说，无论值的正负，都在高位补0.</li>
+     * <li>^ 异或运算符 1001 ^ 1100 = 0101</li>
+     * <li><< 左移运算符，将运算符左边的对象向左移动运算符右边指定的位数（在低位补0）</li>
+     * <li>>> "有符号"右移运算
+     * 符，将运算符左边的对象向右移动运算符右边指定的位数。使用符号扩展机制，也就是说，如果值为正，则在高位补0，如果值为负，则在高位补1.</li>
+     * <li>>>> "无符号"右移运算 符，将运算符左边的对象向右移动运算符右边指定的位数。采用0扩展机制，也就是说，无论值的正负，都在高位补0.</li>
      * </ul>
      * 
      * @author gyli

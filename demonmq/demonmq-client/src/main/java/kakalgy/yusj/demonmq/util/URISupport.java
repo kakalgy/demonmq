@@ -117,7 +117,7 @@ public class URISupport {
     /**
      * Give a URI break off any URI options and store them in a Key / Value Mapping.
      * <p>
-     * 提取URI中的参数部分
+     * 提取URI中的参数部分(URI应该是使用过getRawSchemeSpecificPart或者getSchemeSpecificPart方法)
      * 
      * @param uri
      *            The URI whose query should be extracted and processed.

@@ -3,11 +3,20 @@ package kakalgy.yusj.demonmq.command;
 import java.io.Externalizable;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
+import javax.jms.Topic;
 
 import kakalgy.yusj.demonmq.jndi.JNDIBaseStorable;
+import kakalgy.yusj.demonmq.util.URISupport;
 
 /**
  * 
@@ -63,6 +72,147 @@ public abstract class DemonMQDestination extends JNDIBaseStorable
     }
 
     /**
+     * 构造函数
+     * 
+     * @param name
+     */
+    protected DemonMQDestination(String name) {
+        setPhysicalName(name);
+    }
+
+    /**
+     * 构造函数
+     * 
+     * @param composites
+     */
+    public DemonMQDestination(DemonMQDestination composites[]) {
+        setCompositeDestinations(composites);
+    }
+
+    // ####################################################
+    // static helper methods for working with destinations
+    // 以下几个方法是 用来操作 目的地的静态方法
+    // ####################################################
+    /**
+     * 创建目的地，根据name的前缀来判断应该生成哪一种目的地（DemonMQQueue，DemonMQTopic， DemonMQTempQueue，
+     * DemonMQTempTopic），若name中不包括这些前缀，则通过defaultType来判断
+     * 
+     * @param name
+     * @param defaultType
+     * @return
+     */
+    public static DemonMQDestination createDestination(String name, byte defaultType) {
+        if (name.startsWith(QUEUE_QUALIFIED_PREFIX)) {
+            return new DemonMQQueue(name.substring(QUEUE_QUALIFIED_PREFIX.length()));
+        } else if (name.startsWith(TOPIC_QUALIFIED_PREFIX)) {
+            return new DemonMQTopic(name.substring(TOPIC_QUALIFIED_PREFIX.length()));
+        } else if (name.startsWith(TEMP_QUEUE_QUALIFED_PREFIX)) {
+            return new DemonMQTempQueue(name.substring(TEMP_QUEUE_QUALIFED_PREFIX.length()));
+        } else if (name.startsWith(TEMP_TOPIC_QUALIFED_PREFIX)) {
+            return new DemonMQTempTopic(name.substring(TEMP_TOPIC_QUALIFED_PREFIX.length()));
+        }
+
+        switch (defaultType) {
+        case QUEUE_TYPE:
+            return new DemonMQQueue(name);
+        case TOPIC_TYPE:
+            return new DemonMQTopic(name);
+        case TEMP_QUEUE_TYPE:
+            return new DemonMQTempQueue(name);
+        case TEMP_TOPIC_TYPE:
+            return new DemonMQTempTopic(name);
+        default:
+            throw new IllegalArgumentException("Invalid default destination type: " + defaultType);
+        }
+    }
+
+    /**
+     * 将JMS类型的Destination转换为DemonMQDestination
+     * 
+     * @param dest
+     * @return
+     * @throws JMSException
+     */
+    public static DemonMQDestination transform(Destination dest) throws JMSException {
+        if (dest == null) {
+            return null;
+        }
+        if (dest instanceof DemonMQDestination) {
+            return (DemonMQDestination) dest;
+        }
+
+        if (dest instanceof Queue && dest instanceof Topic) {
+            String queueName = ((Queue) dest).getQueueName();
+            String topicName = ((Topic) dest).getTopicName();
+            if (queueName != null && topicName == null) {
+                return new DemonMQQueue(queueName);
+            } else if (queueName == null && topicName != null) {
+                return new DemonMQTopic(topicName);
+            } else {
+                return unresolvableDestinationTransformer.transform(dest);
+            }
+        }
+        if (dest instanceof TemporaryQueue) {
+            return new DemonMQTempQueue(((TemporaryQueue) dest).getQueueName());
+        }
+        if (dest instanceof TemporaryTopic) {
+            return new DemonMQTempTopic(((TemporaryTopic) dest).getTopicName());
+        }
+        if (dest instanceof Queue) {
+            return new DemonMQQueue(((Queue) dest).getQueueName());
+        }
+        if (dest instanceof Topic) {
+            return new DemonMQTopic(((Topic) dest).getTopicName());
+        }
+        throw new JMSException("Could not transform the destination into a ActiveMQ destination: " + dest);
+    }
+
+    /**
+     * 
+     * @param destination
+     * @param destination2
+     * @return
+     */
+    public static int compare(DemonMQDestination destination, DemonMQDestination destination2) {
+        if (destination == destination2) {
+            return 0;
+        }
+        if (destination == null || destination2 instanceof AnyDestination) {
+            return -1;
+        } else if (destination2 == null || destination instanceof AnyDestination) {
+            return 1;
+        } else {
+            if (destination.getDestinationType() == destination2.getDestinationType()) {
+
+                if (destination.isPattern() && destination2.isPattern()) {
+                    if (destination.getPhysicalName().compareTo(destination2.getPhysicalName()) == 0) {
+                        return 0;
+                    }
+                }
+                if (destination.isPattern()) {
+                    DestinationFilter filter = DestinationFilter.parseFilter(destination);
+                    if (filter.matches(destination2)) {
+                        return 1;
+                    }
+                }
+                if (destination2.isPattern()) {
+                    DestinationFilter filter = DestinationFilter.parseFilter(destination2);
+                    if (filter.matches(destination)) {
+                        return -1;
+                    }
+                }
+                return destination.getPhysicalName().compareTo(destination2.getPhysicalName());
+
+            } else {
+                return destination.isQueue() ? -1 : 1;
+            }
+        }
+    }
+
+    /**
+     * 根据传入值physicalName得到真正的physicalName，以及compositeDestinations，传入的值应该是
+     * physicalName?a=**&b=**
+     * 
      * @openwire:property version=1
      * @param physicalName
      */
@@ -121,6 +271,46 @@ public abstract class DemonMQDestination extends JNDIBaseStorable
                 compositeDestinations[counter++] = createDestination(dest);
             }
         }
+    }
+
+    /**
+     * 
+     * @param destinations
+     */
+    public void setCompositeDestinations(DemonMQDestination[] destinations) {
+        this.compositeDestinations = destinations;
+        this.destinationPaths = null;
+        this.hashValue = 0;
+        this.isPattern = false;
+
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < destinations.length; i++) {
+            if (i != 0) {
+                sb.append(COMPOSITE_SEPERATOR);
+            }
+            if (getDestinationType() == destinations[i].getDestinationType()) {
+                sb.append(destinations[i].getPhysicalName());
+            } else {
+                sb.append(destinations[i].getQualifiedName());
+            }
+        }
+        physicalName = sb.toString();
+    }
+
+    public abstract byte getDestinationType();
+
+    protected abstract String getQualifiedPrefix();
+
+    public boolean isQueue() {
+        return false;
+    }
+
+    public boolean isTopic() {
+        return false;
+    }
+
+    public boolean isTemporary() {
+        return false;
     }
 
     public Map<String, String> getOptions() {
