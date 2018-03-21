@@ -38,6 +38,9 @@ public final class MarshallingSupport {
     public static final byte LIST_TYPE = 12;
     public static final byte BIG_STRING_TYPE = 13;
 
+    /**
+     * 构造函数
+     */
     private MarshallingSupport() {
     }
 
@@ -225,60 +228,147 @@ public final class MarshallingSupport {
         return new UTF8Buffer(data);
     }
 
+    /**
+     * 向out中写入null的标志位，一个byte，值为0
+     * 
+     * @param out
+     * @throws IOException
+     */
     public static void marshalNull(DataOutputStream out) throws IOException {
         out.writeByte(NULL);
     }
 
+    /**
+     * 向out中写入boolean的标志位，一个byte，值为1，再写入value
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalBoolean(DataOutputStream out, boolean value) throws IOException {
         out.writeByte(BOOLEAN_TYPE);
         out.writeBoolean(value);
     }
 
+    /**
+     * 向out中写入byte的标志位，一个byte，值为2，再写入value
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalByte(DataOutputStream out, byte value) throws IOException {
         out.writeByte(BYTE_TYPE);
         out.writeByte(value);
     }
 
+    /**
+     * 向out中写入char的标志位，一个byte，值为3，再写入value
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalChar(DataOutputStream out, char value) throws IOException {
         out.writeByte(CHAR_TYPE);
         out.writeChar(value);
     }
 
+    /**
+     * 向out中写入short的标志位，一个byte，值为4，再写入value
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalShort(DataOutputStream out, short value) throws IOException {
         out.writeByte(SHORT_TYPE);
         out.writeShort(value);
     }
 
+    /**
+     * 向out中写入int的标志位，一个byte，值为5，再写入value
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalInt(DataOutputStream out, int value) throws IOException {
         out.writeByte(INTEGER_TYPE);
         out.writeInt(value);
     }
 
+    /**
+     * 向out中写入long的标志位，一个byte，值为6，再写入value
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalLong(DataOutputStream out, long value) throws IOException {
         out.writeByte(LONG_TYPE);
         out.writeLong(value);
     }
 
+    /**
+     * 向out中写入float的标志位，一个byte，值为8，再写入value
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalFloat(DataOutputStream out, float value) throws IOException {
         out.writeByte(FLOAT_TYPE);
         out.writeFloat(value);
     }
 
+    /**
+     * 向out中写入double的标志位，一个byte，值为7，再写入value
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalDouble(DataOutputStream out, double value) throws IOException {
         out.writeByte(DOUBLE_TYPE);
         out.writeDouble(value);
     }
 
+    /**
+     * 向out中写入byte[]的标志位，一个byte，值为10，再写入一个Int值length，最后再写入value的byte数组，偏移量默认为0
+     * 
+     * @param out
+     * @param value
+     * @throws IOException
+     */
     public static void marshalByteArray(DataOutputStream out, byte[] value) throws IOException {
         marshalByteArray(out, value, 0, value.length);
     }
 
+    /**
+     * 向out中写入byte[]的标志位，一个byte，值为10，再写入一个Int值length，最后再写入value的byte数组
+     * 
+     * @param out
+     * @param value
+     * @param offset
+     * @param length
+     * @throws IOException
+     */
     public static void marshalByteArray(DataOutputStream out, byte[] value, int offset, int length) throws IOException {
         out.writeByte(BYTE_ARRAY_TYPE);
         out.writeInt(length);
         out.write(value, offset, length);
     }
 
+    /**
+     * 根据s的长度，首先判断s的长度与Short.MAX_VALUE/4的大小比较，
+     * 若小于则向out中写入String的标志位，一个byte，值为9，再以UTF8编码写入value，
+     * 若大于等于，则向out中写入BigString的标志位，一个byte，值为13
+     * 
+     * @param out
+     * @param s
+     * @throws IOException
+     */
     public static void marshalString(DataOutputStream out, String s) throws IOException {
         // If it's too big, out.writeUTF may not able able to write it out.
         if (s.length() < Short.MAX_VALUE / 4) {
@@ -290,6 +380,12 @@ public final class MarshallingSupport {
         }
     }
 
+    /**
+     * 
+     * @param dataOut
+     * @param text
+     * @throws IOException
+     */
     public static void writeUTF8(DataOutput dataOut, String text) throws IOException {
         if (text != null) {
             long utfCount = countUTFBytes(text);
@@ -308,6 +404,7 @@ public final class MarshallingSupport {
     /**
      * From:
      * http://svn.apache.org/repos/asf/harmony/enhanced/java/trunk/classlib/modules/luni/src/main/java/java/io/DataOutputStream.java
+     * <p>
      */
     public static long countUTFBytes(String str) {
         int utfCount = 0, length = str.length();
@@ -389,6 +486,13 @@ public final class MarshallingSupport {
         return new String(out, 0, s);
     }
 
+    /**
+     * 将Properties类型数据转换为String
+     * 
+     * @param props
+     * @return
+     * @throws IOException
+     */
     public static String propertiesToString(Properties props) throws IOException {
         String result = "";
         if (props != null) {
@@ -400,6 +504,13 @@ public final class MarshallingSupport {
         return result;
     }
 
+    /**
+     * 将str转换为Properties，注意str的格式
+     * 
+     * @param str
+     * @return
+     * @throws IOException
+     */
     public static Properties stringToProperties(String str) throws IOException {
         Properties result = new Properties();
         if (str != null && str.length() > 0) {
@@ -410,6 +521,12 @@ public final class MarshallingSupport {
         return result;
     }
 
+    /**
+     * text长度若大于63，则省略中间部分字符，用...代替
+     * 
+     * @param text
+     * @return
+     */
     public static String truncate64(String text) {
         if (text.length() > 63) {
             text = text.substring(0, 45) + "..." + text.substring(text.length() - 12);
