@@ -44,6 +44,13 @@ public final class MarshallingSupport {
     private MarshallingSupport() {
     }
 
+    /**
+     * 先向out写入一个int，值为map的size大小，后面再遍历map，将key和value写入out
+     * 
+     * @param map
+     * @param out
+     * @throws IOException
+     */
     public static void marshalPrimitiveMap(Map<String, Object> map, DataOutputStream out) throws IOException {
         if (map == null) {
             out.writeInt(-1);
@@ -93,6 +100,13 @@ public final class MarshallingSupport {
         }
     }
 
+    /**
+     * 先向out写入一个int，值为List的size大小，后面再遍历List，将值写入out
+     * 
+     * @param list
+     * @param out
+     * @throws IOException
+     */
     public static void marshalPrimitiveList(List<Object> list, DataOutputStream out) throws IOException {
         out.writeInt(list.size());
         for (Object element : list) {
@@ -104,6 +118,14 @@ public final class MarshallingSupport {
         return unmarshalPrimitiveList(in, false);
     }
 
+    /**
+     * 首先读取一个int，值为List的长度，再依次读取List的值
+     * 
+     * @param in
+     * @param force
+     * @return
+     * @throws IOException
+     */
     public static List<Object> unmarshalPrimitiveList(DataInputStream in, boolean force) throws IOException {
         int size = in.readInt();
         List<Object> answer = new ArrayList<Object>(size);
@@ -160,6 +182,14 @@ public final class MarshallingSupport {
         return unmarshalPrimitive(in, false);
     }
 
+    /**
+     * 先读取第一个byte，确定是哪一种类型之后再继续读取值
+     * 
+     * @param in
+     * @param force
+     * @return
+     * @throws IOException
+     */
     public static Object unmarshalPrimitive(DataInputStream in, boolean force) throws IOException {
         Object value = null;
         byte type = in.readByte();
@@ -381,6 +411,7 @@ public final class MarshallingSupport {
     }
 
     /**
+     * 先向dataOut中写入一个int值，表示text所含有的byte的数量，再讲text写入dataOut
      * 
      * @param dataOut
      * @param text
@@ -402,9 +433,11 @@ public final class MarshallingSupport {
     }
 
     /**
+     * 
      * From:
      * http://svn.apache.org/repos/asf/harmony/enhanced/java/trunk/classlib/modules/luni/src/main/java/java/io/DataOutputStream.java
      * <p>
+     * 计算String字符串的占用byte数量，根据char的int值来判断
      */
     public static long countUTFBytes(String str) {
         int utfCount = 0, length = str.length();
@@ -422,8 +455,19 @@ public final class MarshallingSupport {
     }
 
     /**
-     * From:
-     * http://svn.apache.org/repos/asf/harmony/enhanced/java/trunk/classlib/modules/luni/src/main/java/java/io/DataOutputStream.java
+     * From:http://svn.apache.org/repos/asf/harmony/enhanced/java/trunk/classlib/modules/luni/src/main/java/java/io/DataOutputStream.java
+     * <p>
+     * 
+     * @param str
+     *            需要存成byte数组的字符串
+     * @param count
+     *            字符串包含的byte长度
+     * @param buffer
+     *            存入的地址
+     * @param offset
+     *            偏移量
+     * @return 返回的是str中byte的个数
+     * @throws IOException
      */
     public static int writeUTFBytesToBuffer(String str, long count, byte[] buffer, int offset) throws IOException {
         int length = str.length();
@@ -443,6 +487,13 @@ public final class MarshallingSupport {
         return offset;
     }
 
+    /**
+     * 取出dataIn里面的字符串，首先读取一个int，表示的是字符串byte的长度，再读取字符串
+     * 
+     * @param dataIn
+     * @return
+     * @throws IOException
+     */
     public static String readUTF8(DataInput dataIn) throws IOException {
         int utflen = dataIn.readInt();
         if (utflen > -1) {
@@ -532,5 +583,11 @@ public final class MarshallingSupport {
             text = text.substring(0, 45) + "..." + text.substring(text.length() - 12);
         }
         return text;
+
+    }
+
+    public static void main(String[] args) {
+        int a = 0xC0;
+        System.out.println(a);
     }
 }

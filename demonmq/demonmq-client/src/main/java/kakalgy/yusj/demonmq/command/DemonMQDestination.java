@@ -1,10 +1,16 @@
 package kakalgy.yusj.demonmq.command;
 
 import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -15,7 +21,10 @@ import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
 import javax.jms.Topic;
 
+import kakalgy.yusj.demonmq.filter.AnyDestination;
+import kakalgy.yusj.demonmq.filter.DestinationFilter;
 import kakalgy.yusj.demonmq.jndi.JNDIBaseStorable;
+import kakalgy.yusj.demonmq.util.IntrospectionSupport;
 import kakalgy.yusj.demonmq.util.URISupport;
 
 /**
@@ -87,6 +96,21 @@ public abstract class DemonMQDestination extends JNDIBaseStorable
      */
     public DemonMQDestination(DemonMQDestination composites[]) {
         setCompositeDestinations(composites);
+    }
+
+    /**
+     * 实现Comparable<Object>接口
+     */
+    public int compareTo(Object that) {
+        // TODO Auto-generated method stub
+        if (that instanceof DemonMQDestination) {
+            return compare(this, (DemonMQDestination) that);
+        }
+        if (that == null) {
+            return 1;
+        } else {
+            return getClass().getName().compareTo(that.getClass().getName());
+        }
     }
 
     // ####################################################
@@ -168,6 +192,7 @@ public abstract class DemonMQDestination extends JNDIBaseStorable
     }
 
     /**
+     * 比较destination和destination2
      * 
      * @param destination
      * @param destination2
@@ -265,7 +290,7 @@ public abstract class DemonMQDestination extends JNDIBaseStorable
                 }
                 l.add(name);
             }
-            compositeDestinations = new ActiveMQDestination[l.size()];
+            compositeDestinations = new DemonMQDestination[l.size()];
             int counter = 0;
             for (String dest : l) {
                 compositeDestinations[counter++] = createDestination(dest);
@@ -297,6 +322,56 @@ public abstract class DemonMQDestination extends JNDIBaseStorable
         physicalName = sb.toString();
     }
 
+    public boolean isComposite() {
+        return compositeDestinations != null;
+    }
+
+    public DemonMQDestination[] getCompositeDestinations() {
+        return compositeDestinations;
+    }
+
+    public String getQualifiedName() {
+        if (isComposite()) {
+            return physicalName;
+        }
+        return getQualifiedPrefix() + physicalName;
+    }
+
+    /**
+     * @openwire:property version=1
+     */
+    public String getPhysicalName() {
+        return physicalName;
+    }
+
+    public DemonMQDestination createDestination(String name) {
+        return createDestination(name, getDestinationType());
+    }
+
+    public String[] getDestinationPaths() {
+
+        if (destinationPaths != null) {
+            return destinationPaths;
+        }
+
+        List<String> l = new ArrayList<String>();
+        StringBuilder level = new StringBuilder();
+        final char separator = PATH_SEPERATOR.charAt(0);
+        for (char c : physicalName.toCharArray()) {
+            if (c == separator) {
+                l.add(level.toString());
+                level.delete(0, level.length());
+            } else {
+                level.append(c);
+            }
+        }
+        l.add(level.toString());
+
+        destinationPaths = new String[l.size()];
+        l.toArray(destinationPaths);
+        return destinationPaths;
+    }
+
     public abstract byte getDestinationType();
 
     protected abstract String getQualifiedPrefix();
@@ -313,8 +388,105 @@ public abstract class DemonMQDestination extends JNDIBaseStorable
         return false;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DemonMQDestination d = (DemonMQDestination) o;
+        return physicalName.equals(d.physicalName);
+    }
+
+    @Override
+    public int hashCode() {
+        if (hashValue == 0) {
+            hashValue = physicalName.hashCode();
+        }
+        return hashValue;
+    }
+
+    @Override
+    public String toString() {
+        return getQualifiedName();
+    }
+
+    /**
+     * 序列化的时候 只需要 String PhysicalName和 Map<String, String> options
+     */
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeUTF(this.getPhysicalName());
+        out.writeObject(options);
+    }
+
+    /**
+     * 反序列化的时候 只需要 String PhysicalName和 Map<String, String> options
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        this.setPhysicalName(in.readUTF());
+        this.options = (Map<String, String>) in.readObject();
+    }
+
+    /**
+     * 根据byte类型确认是哪一种终端
+     * 
+     * @return
+     */
+    public String getDestinationTypeAsString() {
+        switch (getDestinationType()) {
+        case QUEUE_TYPE:
+            return "Queue";
+        case TOPIC_TYPE:
+            return "Topic";
+        case TEMP_QUEUE_TYPE:
+            return "TempQueue";
+        case TEMP_TOPIC_TYPE:
+            return "TempTopic";
+        default:
+            throw new IllegalArgumentException("Invalid destination type: " + getDestinationType());
+        }
+    }
+
     public Map<String, String> getOptions() {
         return this.options;
+    }
+
+    /**
+     * DataStructure接口
+     */
+    public boolean isMarshallAware() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /**
+     * JNDIBaseStorable的抽象方法
+     * <p>
+     * 将Properties里的键值对设置到本对象中
+     */
+    @Override
+    public void buildFromProperties(Properties properties) {
+        if (properties == null) {
+            properties = new Properties();
+        }
+
+        IntrospectionSupport.setProperties(this, properties);
+    }
+
+    /**
+     * JNDIBaseStorable的抽象方法
+     * <p>
+     * 将physicalName加入Properties的键值对
+     */
+    @Override
+    public void populateProperties(Properties props) {
+        props.setProperty("physicalName", getPhysicalName());
     }
 
     public boolean isPattern() {

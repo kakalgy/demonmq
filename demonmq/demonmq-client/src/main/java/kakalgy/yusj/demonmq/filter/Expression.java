@@ -1,5 +1,7 @@
 package kakalgy.yusj.demonmq.filter;
 
+import javax.jms.JMSException;
+
 /**
  * Represents an expression
  * 

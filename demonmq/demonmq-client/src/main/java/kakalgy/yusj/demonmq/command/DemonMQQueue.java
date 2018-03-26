@@ -1,7 +1,5 @@
 package kakalgy.yusj.demonmq.command;
 
-import java.util.Properties;
-
 import javax.jms.JMSException;
 import javax.jms.Queue;
 
@@ -30,36 +28,52 @@ public class DemonMQQueue extends DemonMQDestination implements Queue {
         // TODO Auto-generated constructor stub
     }
 
+    /**
+     * 构造函数
+     * 
+     * @param name
+     */
+    public DemonMQQueue(String name) {
+        super(name);
+    }
+
+    /**
+     * 实现Queue接口
+     */
     public String getQueueName() throws JMSException {
         // TODO Auto-generated method stub
-        return null;
+        return getPhysicalName();
     }
 
+    /**
+     * 实现DataStructure接口
+     */
     public byte getDataStructureType() {
         // TODO Auto-generated method stub
-        return 0;
+        return DATA_STRUCTURE_TYPE;
     }
 
-    public boolean isMarshallAware() {
-        // TODO Auto-generated method stub
-        return false;
+    /**
+     * 重写DemonMQDestination方法
+     */
+    public boolean isQueue() {
+        return true;
     }
 
-    public int compareTo(Object o) {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
+    /**
+     * DemonMQDestination抽象方法
+     */
     @Override
-    protected void buildFromProperties(Properties properties) {
-        // TODO Auto-generated method stub
-
+    public byte getDestinationType() {
+        return QUEUE_TYPE;
     }
 
+    /**
+     * DemonMQDestination抽象方法
+     */
     @Override
-    protected void populateProperties(Properties properties) {
-        // TODO Auto-generated method stub
-
+    protected String getQualifiedPrefix() {
+        return QUEUE_QUALIFIED_PREFIX;
     }
 
 }

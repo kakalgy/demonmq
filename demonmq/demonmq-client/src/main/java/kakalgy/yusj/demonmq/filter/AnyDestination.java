@@ -4,6 +4,8 @@ import kakalgy.yusj.demonmq.command.DemonMQDestination;
 
 /**
  * allow match to any set of composite destinations, both queues and topics
+ * <p>
+ * 可以用来匹配任何类型的DemonMQDestination
  * 
  * @author gyli
  *

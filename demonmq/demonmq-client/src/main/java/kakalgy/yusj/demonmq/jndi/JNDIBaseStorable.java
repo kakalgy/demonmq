@@ -21,84 +21,84 @@ import javax.naming.Reference;
  */
 public abstract class JNDIBaseStorable implements JNDIStorableInterface, Externalizable {
 
-	private Properties properties;
+    private Properties properties;
 
-	/**
-	 * Set the properties that will represent the instance in JNDI
-	 * <p>
-	 * set方法，注意与{@link kakalgy.yusj.demonmq.jndi.JNDIBaseStorable.setProperties(Properties
-	 * properties)}方法的区别
-	 * 
-	 * @param properties
-	 */
-	protected abstract void buildFromProperties(Properties properties);
+    /**
+     * Set the properties that will represent the instance in JNDI
+     * <p>
+     * set方法，注意与{@link kakalgy.yusj.demonmq.jndi.JNDIBaseStorable.setProperties(Properties
+     * properties)}方法的区别
+     * 
+     * @param properties
+     */
+    protected abstract void buildFromProperties(Properties properties);
 
-	/**
-	 * Initialize the instance from properties stored in JNDI
-	 * <p>
-	 * get方法
-	 * 
-	 * @param properties
-	 */
-	protected abstract void populateProperties(Properties properties);
+    /**
+     * Initialize the instance from properties stored in JNDI
+     * <p>
+     * 向properties中添加数据
+     * 
+     * @param properties
+     */
+    protected abstract void populateProperties(Properties properties);
 
-	/**
-	 * Retrive a Reference for this instance to store in JNDI
-	 * <p>
-	 * 生成当前类的Reference
-	 * 
-	 * @return the built Reference
-	 * @throws NamingException
-	 *             if error on building Reference
-	 */
-	public Reference getReference() throws NamingException {
-		// TODO Auto-generated method stub
-		return JNDIReferenceFactory.createReference(this.getClass().getName(), this);
-	}
+    /**
+     * Retrive a Reference for this instance to store in JNDI
+     * <p>
+     * 生成当前类的Reference
+     * 
+     * @return the built Reference
+     * @throws NamingException
+     *             if error on building Reference
+     */
+    public Reference getReference() throws NamingException {
+        // TODO Auto-generated method stub
+        return JNDIReferenceFactory.createReference(this.getClass().getName(), this);
+    }
 
-	/**
-	 * @param out
-	 * @throws IOException
-	 * @see java.io.Externalizable#writeExternal(java.io.ObjectOutput)
-	 */
-	public void writeExternal(ObjectOutput out) throws IOException {
-		// TODO Auto-generated method stub
-		out.writeObject(getProperties());
-	}
+    /**
+     * @param out
+     * @throws IOException
+     * @see java.io.Externalizable#writeExternal(java.io.ObjectOutput)
+     */
+    public void writeExternal(ObjectOutput out) throws IOException {
+        // TODO Auto-generated method stub
+        out.writeObject(getProperties());
+    }
 
-	/**
-	 * @param in
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
-	 */
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		// TODO Auto-generated method stub
-		Properties props = (Properties) in.readObject();
-		if (props != null) {
-			setProperties(props);
-		}
-	}
+    /**
+     * @param in
+     * @throws IOException
+     * @throws ClassNotFoundException
+     * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
+     */
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        // TODO Auto-generated method stub
+        Properties props = (Properties) in.readObject();
+        if (props != null) {
+            setProperties(props);
+        }
+    }
 
-	/**
-	 * set the properties for this instance as retrieved from JNDI
-	 */
-	public synchronized void setProperties(Properties properties) {
-		// TODO Auto-generated method stub
-		this.properties = properties;
-		buildFromProperties(properties);
-	}
+    /**
+     * set the properties for this instance as retrieved from JNDI
+     */
+    public synchronized void setProperties(Properties properties) {
+        // TODO Auto-generated method stub
+        this.properties = properties;
+        buildFromProperties(properties);
+    }
 
-	/**
-	 * Get the properties from this instance for storing in JNDI
-	 */
-	public Properties getProperties() {
-		// TODO Auto-generated method stub
-		if (this.properties == null) {
-			this.properties = new Properties();
-		}
-		populateProperties(properties);
-		return this.properties;
-	}
+    /**
+     * Get the properties from this instance for storing in JNDI
+     */
+    public Properties getProperties() {
+        // TODO Auto-generated method stub
+        if (this.properties == null) {
+            this.properties = new Properties();
+        }
+        populateProperties(properties);
+        return this.properties;
+    }
 
 }
