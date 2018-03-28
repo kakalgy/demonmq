@@ -2,6 +2,8 @@ package kakalgy.yusj.demonmq.command;
 
 /**
  * Represents the logical endpoint where commands come from or are sent to.
+ * <p>
+ * 代表了command从哪里发出，发送到哪里的逻辑端点
  * 
  * For connection based transports like TCP / VM then there is a single endpoint
  * for all commands. For transports like multicast there could be different
