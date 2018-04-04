@@ -79,7 +79,9 @@ public class MessageId implements DataStructure, Comparable<MessageId> {
         return textView;
     }
 
-    @Override
+    /**
+    * 
+    */
     public byte getDataStructureType() {
         return DATA_STRUCTURE_TYPE;
     }
@@ -162,7 +164,9 @@ public class MessageId implements DataStructure, Comparable<MessageId> {
         this.brokerSequenceId = brokerSequenceId;
     }
 
-    @Override
+    /**
+     * 
+     */
     public boolean isMarshallAware() {
         return false;
     }

@@ -1,5 +1,7 @@
 package kakalgy.yusj.demonmq.command;
 
+import kakalgy.yusj.demonmq.state.CommandVisitor;
+
 /**
  * The Command Pattern so that we can send and receive commands on the different
  * transports
